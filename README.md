@@ -35,6 +35,10 @@ Actualmente se dispone de dos servicios:
 
 Desde Ubuntu/WSL2, situarse en el directorio del proyecto:
 
+```bash
+cd /mnt/c/quental-backend-test
+```
+
 Levantar los servicios:
 
 ```bash
@@ -46,3 +50,35 @@ Comprobar el estado de los contenedores:
 ```bash
 ./vendor/bin/sail ps
 ```
+
+## Base de datos
+
+Las migraciones definen el modelo de datos necesario para la aplicación:
+
+* `users`
+* `characters`
+* `episodes`
+* `locations`
+* `character_episode`
+* `favorites`
+
+Para ejecutar las migraciones:
+
+```bash
+./vendor/bin/sail artisan migrate
+```
+
+El modelo mantiene separado el identificador interno de cada entidad de su `external_id`, utilizado para relacionar los registros con la API de Rick and Morty y facilitar la sincronización idempotente.
+
+## Arquitectura
+
+Se mantiene una arquitectura sencilla, separando las responsabilidades principales.
+
+La integración con Rick and Morty está aislada mediante:
+
+* `RickAndMortyClient`: define el contrato de acceso a la API externa.
+* `RickAndMortyHttpClient`: implementa dicho contrato utilizando el cliente HTTP de Laravel.
+
+De esta forma, la lógica de sincronización y la aplicación no dependen directamente de HTTP ni de la implementación concreta de la API externa.
+
+La solución evita introducir capas innecesarias, manteniendo únicamente las abstracciones necesarias para cumplir los requisitos de desacoplamiento, testabilidad y separación de responsabilidades.
