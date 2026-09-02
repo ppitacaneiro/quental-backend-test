@@ -35,10 +35,6 @@ Actualmente se dispone de dos servicios:
 
 Desde Ubuntu/WSL2, situarse en el directorio del proyecto:
 
-```bash
-cd /mnt/c/quental-backend-test
-```
-
 Levantar los servicios:
 
 ```bash
