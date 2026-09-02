@@ -4,21 +4,21 @@ Backend desarrollado como prueba técnica para Quental.
 
 ## Stack tecnológico
 
-* PHP
-* Laravel 13
-* Laravel Sail
-* MySQL 8.4
-* Docker
-* Docker Compose
+- PHP
+- Laravel 13
+- Laravel Sail
+- MySQL 8.4
+- Docker
+- Docker Compose
 
 ## Requisitos
 
 Para ejecutar el proyecto es necesario disponer de:
 
-* Docker Desktop
-* WSL2
-* Ubuntu sobre WSL2
-* Git
+- Docker Desktop
+- WSL2
+- Ubuntu sobre WSL2
+- Git
 
 El entorno de desarrollo está preparado para ejecutarse mediante **Laravel Sail**.
 
@@ -28,8 +28,8 @@ El proyecto utiliza Laravel Sail para gestionar el entorno de desarrollo mediant
 
 Actualmente se dispone de dos servicios:
 
-* `laravel.test`: aplicación Laravel.
-* `mysql`: base de datos MySQL 8.4.
+- `laravel.test`: aplicación Laravel.
+- `mysql`: base de datos MySQL 8.4.
 
 ### Levantar el entorno
 
@@ -37,11 +37,7 @@ Desde Ubuntu/WSL2, situarse en el directorio del proyecto:
 
 ```bash
 cd /mnt/c/quental-backend-test
-```
 
-Levantar los servicios:
-
-```bash
 ./vendor/bin/sail up -d
 ```
 
@@ -51,16 +47,16 @@ Comprobar el estado de los contenedores:
 ./vendor/bin/sail ps
 ```
 
-## Base de datos
+### Base de datos
 
 Las migraciones definen el modelo de datos necesario para la aplicación:
 
-* `users`
-* `characters`
-* `episodes`
-* `locations`
-* `character_episode`
-* `favorites`
+users
+characters
+episodes
+locations
+character_episode
+favorites
 
 Para ejecutar las migraciones:
 
@@ -68,17 +64,37 @@ Para ejecutar las migraciones:
 ./vendor/bin/sail artisan migrate
 ```
 
-El modelo mantiene separado el identificador interno de cada entidad de su `external_id`, utilizado para relacionar los registros con la API de Rick and Morty y facilitar la sincronización idempotente.
+El modelo mantiene separado el identificador interno de cada entidad de su external_id, utilizado para relacionar los registros con la API de Rick and Morty y facilitar la sincronización idempotente.
 
-## Arquitectura
+### Integración con Rick and Morty
 
-Se mantiene una arquitectura sencilla, separando las responsabilidades principales.
+La comunicación con la API externa está desacoplada de la lógica de la aplicación.
 
-La integración con Rick and Morty está aislada mediante:
+La integración se organiza mediante:
 
-* `RickAndMortyClient`: define el contrato de acceso a la API externa.
-* `RickAndMortyHttpClient`: implementa dicho contrato utilizando el cliente HTTP de Laravel.
+RickAndMortyClient: contrato de acceso a la API.
+RickAndMortyHttpClient: implementación mediante el cliente HTTP de Laravel.
+RickAndMortyResponseValidator: validación de las respuestas recibidas.
+Dtos: estructuras internas para los datos obtenidos.
+Mappers: transformación de las respuestas externas.
+Sincronización
 
-De esta forma, la lógica de sincronización y la aplicación no dependen directamente de HTTP ni de la implementación concreta de la API externa.
+La sincronización se realiza mediante RickAndMortySyncService y está preparada para trabajar de forma paginada e idempotente.
 
-La solución evita introducir capas innecesarias, manteniendo únicamente las abstracciones necesarias para cumplir los requisitos de desacoplamiento, testabilidad y separación de responsabilidades.
+Para ejecutarla:
+
+```bash
+./vendor/bin/sail artisan sync:rick-and-morty
+```
+
+El proceso sincroniza las localizaciones, episodios y personajes, manteniendo sus relaciones.
+
+### Arquitectura
+
+La solución mantiene una separación sencilla de responsabilidades:
+
+Integrations: comunicación con servicios externos.
+Dtos: estructuras de datos.
+Mappers: transformación de datos externos.
+Services: lógica de sincronización.
+Models: persistencia y relaciones.
