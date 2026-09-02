@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Services\RickAndMorty;
+namespace App\Dtos;
 
-class EpisodeData
+class EpisodeDto
 {
     public function __construct(
         public readonly int $externalId,

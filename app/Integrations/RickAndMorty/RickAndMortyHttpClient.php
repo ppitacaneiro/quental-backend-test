@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\RickAndMorty;
+namespace App\Integrations\RickAndMorty;
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;

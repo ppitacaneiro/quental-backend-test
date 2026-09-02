@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Services\RickAndMorty;
+namespace App\Dtos;
 
-class LocationData
+class LocationDto
 {
     public function __construct(
         public readonly int $externalId,

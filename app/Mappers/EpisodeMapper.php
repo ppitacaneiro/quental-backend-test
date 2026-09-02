@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Services\RickAndMorty;
+namespace App\Mappers;
 
 use InvalidArgumentException;
+use App\Dtos\EpisodeDto;
 
 class EpisodeMapper
 {
-    public function map(array $data): EpisodeData
+    public function map(array $data): EpisodeDto
     {
         if (!isset($data['id']) || !is_int($data['id'])) {
             throw new InvalidArgumentException(
@@ -20,7 +21,7 @@ class EpisodeMapper
             );
         }
 
-        return new EpisodeData(
+        return new EpisodeDto(
             externalId: $data['id'],
             name: $data['name'],
             airDate: $data['air_date'] ?? null,

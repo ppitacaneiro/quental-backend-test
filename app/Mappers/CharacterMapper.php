@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Services\RickAndMorty;
+namespace App\Mappers;
 
 use InvalidArgumentException;
+use App\Dtos\CharacterDto;
 
 class CharacterMapper
 {
-    public function map(array $data): CharacterData
+    public function map(array $data): CharacterDto
     {
         if (!isset($data['id']) || !is_int($data['id'])) {
             throw new InvalidArgumentException(
@@ -20,7 +21,7 @@ class CharacterMapper
             );
         }
 
-        return new CharacterData(
+        return new CharacterDto(
             externalId: $data['id'],
             name: $data['name'],
             status: $data['status'] ?? null,
