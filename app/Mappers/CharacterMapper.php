@@ -2,8 +2,8 @@
 
 namespace App\Mappers;
 
-use InvalidArgumentException;
 use App\Dtos\CharacterDto;
+use InvalidArgumentException;
 
 class CharacterMapper
 {
@@ -35,6 +35,9 @@ class CharacterMapper
             currentLocationExternalId: $this->extractLocationId(
                 $data['location']['url'] ?? null
             ),
+            episodeExternalIds: $this->extractEpisodeIds(
+                $data['episode'] ?? []
+            ),
         );
     }
 
@@ -53,5 +56,30 @@ class CharacterMapper
         $id = basename($path);
 
         return is_numeric($id) ? (int) $id : null;
+    }
+
+    private function extractEpisodeIds(array $urls): array
+    {
+        $ids = [];
+
+        foreach ($urls as $url) {
+            if (!is_string($url)) {
+                continue;
+            }
+
+            $path = parse_url($url, PHP_URL_PATH);
+
+            if (!$path) {
+                continue;
+            }
+
+            $id = basename($path);
+
+            if (is_numeric($id)) {
+                $ids[] = (int) $id;
+            }
+        }
+
+        return $ids;
     }
 }

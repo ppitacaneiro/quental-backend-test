@@ -6,8 +6,10 @@ use App\Integrations\RickAndMorty\RickAndMortyClient;
 use App\Integrations\RickAndMorty\RickAndMortyResponseValidator;
 use App\Mappers\LocationMapper;
 use App\Mappers\CharacterMapper;
+use App\Mappers\EpisodeMapper;
 use App\Models\Location;
 use App\Models\Character;
+use App\Models\Episode;
 
 class RickAndMortySyncService
 {
@@ -16,6 +18,7 @@ class RickAndMortySyncService
         private readonly RickAndMortyResponseValidator $validator,
         private readonly LocationMapper $locationMapper,
         private readonly CharacterMapper $characterMapper,
+        private readonly EpisodeMapper $episodeMapper,
     ) {
     }
 
@@ -66,7 +69,7 @@ class RickAndMortySyncService
                     $character->currentLocationExternalId
                 );
 
-                Character::updateOrCreate(
+                $characterModel = Character::updateOrCreate(
                     ['external_id' => $character->externalId],
                     [
                         'name' => $character->name,
@@ -79,11 +82,55 @@ class RickAndMortySyncService
                         'current_location_id' => $currentLocationId,
                     ]
                 );
+
+                $this->syncCharacterEpisodes(
+                    $characterModel,
+                    $character->episodeExternalIds
+                );
             }
 
             $pages = $response['info']['pages'];
             $page++;
         } while ($page <= $pages);
+    }
+
+    public function syncEpisodes(): void
+    {
+        $page = 1;
+
+        do {
+            $response = $this->client->getEpisodes($page);
+
+            $this->validator->validate($response);
+
+            foreach ($response['results'] as $result) {
+                $episode = $this->episodeMapper->map($result);
+
+                Episode::updateOrCreate(
+                    ['external_id' => $episode->externalId],
+                    [
+                        'name' => $episode->name,
+                        'air_date' => $episode->airDate,
+                        'episode_code' => $episode->episodeCode,
+                    ]
+                );
+            }
+
+            $pages = $response['info']['pages'];
+            $page++;
+        } while ($page <= $pages);
+    }
+
+    private function syncCharacterEpisodes(
+        Character $character,
+        array $episodeExternalIds
+    ): void
+    {
+        $episodeIds = Episode::query()
+            ->whereIn('external_id', $episodeExternalIds)
+            ->pluck('id');
+
+        $character->episodes()->sync($episodeIds);
     }
 
     private function findLocationId(?int $externalId): ?int

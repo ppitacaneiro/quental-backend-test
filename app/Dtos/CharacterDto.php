@@ -14,6 +14,7 @@ class CharacterDto
         public readonly ?string $image,
         public readonly ?int $originLocationExternalId,
         public readonly ?int $currentLocationExternalId,
+        public readonly array $episodeExternalIds,
     ) {
     }
 }
