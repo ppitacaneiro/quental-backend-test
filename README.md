@@ -51,12 +51,12 @@ Comprobar el estado de los contenedores:
 
 Las migraciones definen el modelo de datos necesario para la aplicación:
 
-users
-characters
-episodes
-locations
-character_episode
-favorites
+- users
+- characters
+- episodes
+- locations
+- character_episode
+- favorites
 
 Para ejecutar las migraciones:
 
@@ -72,12 +72,13 @@ La comunicación con la API externa está desacoplada de la lógica de la aplica
 
 La integración se organiza mediante:
 
-RickAndMortyClient: contrato de acceso a la API.
-RickAndMortyHttpClient: implementación mediante el cliente HTTP de Laravel.
-RickAndMortyResponseValidator: validación de las respuestas recibidas.
-Dtos: estructuras internas para los datos obtenidos.
-Mappers: transformación de las respuestas externas.
-Sincronización
+- RickAndMortyClient: contrato de acceso a la API.
+- RickAndMortyHttpClient: implementación mediante el cliente HTTP de Laravel.
+- RickAndMortyResponseValidator: validación de las respuestas recibidas.
+- Dtos: estructuras internas para los datos obtenidos.
+- Mappers: transformación de las respuestas externas.
+
+## Sincronización
 
 La sincronización se realiza mediante RickAndMortySyncService y está preparada para trabajar de forma paginada e idempotente.
 
@@ -93,8 +94,8 @@ El proceso sincroniza las localizaciones, episodios y personajes, manteniendo su
 
 La solución mantiene una separación sencilla de responsabilidades:
 
-Integrations: comunicación con servicios externos.
-Dtos: estructuras de datos.
-Mappers: transformación de datos externos.
-Services: lógica de sincronización.
-Models: persistencia y relaciones.
+- Integrations: comunicación con servicios externos.
+- Dtos: estructuras de datos.
+- Mappers: transformación de datos externos.
+- Services: lógica de sincronización.
+- Models: persistencia y relaciones.
