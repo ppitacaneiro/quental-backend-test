@@ -24,14 +24,9 @@ class RickAndMortySyncService
 
     public function syncLocations(): void
     {
-        $page = 1;
-
-        do {
-            $response = $this->client->getLocations($page);
-
-            $this->validator->validate($response);
-
-            foreach ($response['results'] as $result) {
+        $this->paginate(
+            fn (int $page) => $this->client->getLocations($page),
+            function (array $result): void {
                 $location = $this->locationMapper->map($result);
 
                 Location::updateOrCreate(
@@ -43,22 +38,14 @@ class RickAndMortySyncService
                     ]
                 );
             }
-
-            $pages = $response['info']['pages'];
-            $page++;
-        } while ($page <= $pages);
+        );
     }
 
     public function syncCharacters(): void
     {
-        $page = 1;
-
-        do {
-            $response = $this->client->getCharacters($page);
-
-            $this->validator->validate($response);
-
-            foreach ($response['results'] as $result) {
+        $this->paginate(
+            fn (int $page) => $this->client->getCharacters($page),
+            function (array $result): void {
                 $character = $this->characterMapper->map($result);
 
                 $originLocationId = $this->findLocationId(
@@ -88,22 +75,14 @@ class RickAndMortySyncService
                     $character->episodeExternalIds
                 );
             }
-
-            $pages = $response['info']['pages'];
-            $page++;
-        } while ($page <= $pages);
+        );
     }
 
     public function syncEpisodes(): void
     {
-        $page = 1;
-
-        do {
-            $response = $this->client->getEpisodes($page);
-
-            $this->validator->validate($response);
-
-            foreach ($response['results'] as $result) {
+        $this->paginate(
+            fn (int $page) => $this->client->getEpisodes($page),
+            function (array $result): void {
                 $episode = $this->episodeMapper->map($result);
 
                 Episode::updateOrCreate(
@@ -115,9 +94,33 @@ class RickAndMortySyncService
                     ]
                 );
             }
+        );
+    }
+
+    /**
+     * @param callable(int): array $fetchPage
+     * @param callable(array): void $onResult
+     */
+    private function paginate(callable $fetchPage, callable $onResult): void
+    {
+        $page = 1;
+
+        do {
+            $response = $fetchPage($page);
+
+            $this->validator->validate($response);
+
+            foreach ($response['results'] as $result) {
+                $onResult($result);
+            }
 
             $pages = $response['info']['pages'];
             $page++;
+
+            // pequeña pausa entre páginas para no disparar el rate limit de la API externa
+            if ($page <= $pages) {
+                usleep((int) config('services.rickandmorty.request_delay_ms') * 1000);
+            }
         } while ($page <= $pages);
     }
 

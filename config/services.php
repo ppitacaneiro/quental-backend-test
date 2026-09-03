@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'rickandmorty' => [
+        'request_delay_ms' => env('RICKANDMORTY_REQUEST_DELAY_MS', 250),
+    ],
+
 ];
