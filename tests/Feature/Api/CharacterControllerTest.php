@@ -19,7 +19,7 @@ class CharacterControllerTest extends TestCase
         $response = $this->getJson('/api/characters');
 
         $response->assertOk()
-            ->assertJsonStructure(['data', 'links', 'meta'])
+            ->assertJsonStructure(['data', 'current_page', 'per_page', 'total', 'last_page'])
             ->assertJsonCount(3, 'data');
     }
 
@@ -87,9 +87,9 @@ class CharacterControllerTest extends TestCase
 
         $response->assertOk()
             ->assertJsonCount(2, 'data')
-            ->assertJsonPath('meta.current_page', 2)
-            ->assertJsonPath('meta.per_page', 2)
-            ->assertJsonPath('meta.total', 5);
+            ->assertJsonPath('current_page', 2)
+            ->assertJsonPath('per_page', 2)
+            ->assertJsonPath('total', 5);
     }
 
     public function test_index_per_page_defaults_to_15_when_not_specified(): void
@@ -98,7 +98,7 @@ class CharacterControllerTest extends TestCase
 
         $response = $this->getJson('/api/characters');
 
-        $response->assertOk()->assertJsonPath('meta.per_page', 15);
+        $response->assertOk()->assertJsonPath('per_page', 15);
     }
 
     public function test_index_rejects_per_page_below_minimum(): void
