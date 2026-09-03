@@ -105,4 +105,37 @@ class RickAndMortyHttpClientTest extends TestCase
 
         (new RickAndMortyHttpClient())->getCharacters();
     }
+
+    public function test_it_retries_and_succeeds_after_a_429_response(): void
+    {
+        Http::fake([
+            'https://rickandmortyapi.com/api/character*' => Http::sequence()
+                ->push(['error' => 'rate limited'], 429, ['Retry-After' => '0'])
+                ->push([
+                    'info' => ['count' => 1, 'pages' => 1],
+                    'results' => [
+                        ['id' => 1, 'name' => 'Rick Sanchez'],
+                    ],
+                ], 200),
+        ]);
+
+        $response = (new RickAndMortyHttpClient())->getCharacters();
+
+        $this->assertSame('Rick Sanchez', $response['results'][0]['name']);
+        Http::assertSentCount(2);
+    }
+
+    public function test_it_throws_after_exhausting_retries_on_repeated_429_responses(): void
+    {
+        Http::fake([
+            'https://rickandmortyapi.com/api/character*' =>
+                Http::response(['error' => 'rate limited'], 429, ['Retry-After' => '0']),
+        ]);
+
+        $this->expectException(\Illuminate\Http\Client\RequestException::class);
+
+        (new RickAndMortyHttpClient())->getCharacters();
+
+        Http::assertSentCount(4);
+    }
 }
