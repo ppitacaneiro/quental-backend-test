@@ -34,6 +34,6 @@ class User extends Authenticatable
 
     public function favoriteCharacters(): BelongsToMany
     {
-        return $this->belongsToMany(Character::class, 'favorites');
+        return $this->belongsToMany(Character::class, 'favorites')->withTimestamps();
     }
-}   
+}
