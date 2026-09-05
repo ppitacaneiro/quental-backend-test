@@ -152,4 +152,6 @@ La solución mantiene una separación sencilla de responsabilidades:
 
 ## Alcance actual
 
-El proyecto expone por ahora la sincronización de datos vía comando Artisan; no incluye todavía una API REST pública para consultar personajes/episodios/localizaciones ni el módulo de favoritos, aunque la tabla `favorites` ya está migrada como base para una futura implementación.
+El proyecto expone una API REST propia para autenticación, consulta de personajes y gestión de favoritos. La documentación interactiva está disponible en `/docs/api` y el contrato OpenAPI versionado en `docs/openapi.yaml`.
+
+La sincronización de localizaciones, episodios y personajes desde la API pública de Rick and Morty continúa ejecutándose mediante el comando Artisan `sync:rick-and-morty`; esa integración externa no forma parte de la API HTTP propia.

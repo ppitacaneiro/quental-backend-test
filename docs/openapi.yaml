@@ -1,0 +1,433 @@
+openapi: 3.1.0
+info:
+  title: Quental Backend API
+  version: 1.0.0
+  description: |
+    API propia para autenticacion, consulta de personajes y gestion de favoritos.
+    La sincronizacion con Rick and Morty se ejecuta mediante un comando Artisan y
+    no forma parte de esta API HTTP.
+servers:
+  - url: /
+    description: Servidor actual
+tags:
+  - name: Auth
+    description: Registro y autenticacion
+  - name: Characters
+    description: Consulta de personajes sincronizados
+  - name: Favorites
+    description: Favoritos del usuario autenticado
+paths:
+  /api/register:
+    post:
+      tags: [Auth]
+      summary: Registrar un usuario
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              name: Rick Sanchez
+              email: rick@example.com
+              password: Password123!
+              password_confirmation: Password123!
+      responses:
+        '201':
+          description: Usuario creado y token emitido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/login:
+    post:
+      tags: [Auth]
+      summary: Iniciar sesion
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: rick@example.com
+              password: Password123!
+      responses:
+        '200':
+          description: Credenciales validas y token emitido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '422':
+          description: Datos invalidos o credenciales incorrectas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+  /api/logout:
+    post:
+      tags: [Auth]
+      summary: Revocar el token actual
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Token revocado; respuesta sin contenido
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/characters:
+    get:
+      tags: [Characters]
+      summary: Listar personajes
+      operationId: listCharacters
+      parameters:
+        - $ref: '#/components/parameters/NameFilter'
+        - $ref: '#/components/parameters/StatusFilter'
+        - $ref: '#/components/parameters/SpeciesFilter'
+        - $ref: '#/components/parameters/GenderFilter'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Lista paginada de personajes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCharacters'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/characters/{character}:
+    get:
+      tags: [Characters]
+      summary: Obtener el detalle de un personaje
+      operationId: getCharacter
+      parameters:
+        - $ref: '#/components/parameters/CharacterId'
+      responses:
+        '200':
+          description: Detalle del personaje
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CharacterDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/favorites:
+    get:
+      tags: [Favorites]
+      summary: Listar los favoritos del usuario autenticado
+      operationId: listFavorites
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Lista paginada de favoritos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFavorites'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/favorites/{character}:
+    post:
+      tags: [Favorites]
+      summary: Añadir un personaje a favoritos
+      description: Operacion idempotente; repetirla no crea duplicados.
+      operationId: addFavorite
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CharacterId'
+      responses:
+        '201':
+          description: Personaje añadido o ya existente en favoritos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CharacterSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Favorites]
+      summary: Eliminar un personaje de favoritos
+      description: Operacion idempotente; si no era favorito, no produce cambios.
+      operationId: removeFavorite
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CharacterId'
+      responses:
+        '204':
+          description: Favorito eliminado o inexistente; respuesta sin contenido
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Sanctum token
+  parameters:
+    CharacterId:
+      name: character
+      in: path
+      required: true
+      description: ID interno del personaje
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+    NameFilter:
+      name: name
+      in: query
+      description: Coincidencia parcial por nombre
+      schema:
+        type: string
+        maxLength: 255
+    StatusFilter:
+      name: status
+      in: query
+      description: Coincidencia exacta por estado
+      schema:
+        type: string
+        maxLength: 255
+    SpeciesFilter:
+      name: species
+      in: query
+      description: Coincidencia exacta por especie
+      schema:
+        type: string
+        maxLength: 255
+    GenderFilter:
+      name: gender
+      in: query
+      description: Coincidencia exacta por genero
+      schema:
+        type: string
+        maxLength: 255
+    Page:
+      name: page
+      in: query
+      description: Numero de pagina
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PerPage:
+      name: per_page
+      in: query
+      description: Resultados por pagina
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 15
+  responses:
+    Unauthorized:
+      description: Falta autenticacion o el token no es valido
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MessageError'
+          example:
+            message: Unauthenticated.
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MessageError'
+          example:
+            message: No query results for model [App\\Models\\Character].
+    ValidationError:
+      description: Error de validacion
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [name, email, password, password_confirmation]
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          description: Debe ser unico
+        password:
+          type: string
+          format: password
+          description: Debe cumplir Password::defaults() y confirmarse
+        password_confirmation:
+          type: string
+          format: password
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    User:
+      type: object
+      required: [id, name, email]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        email_verified_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    AuthResponse:
+      type: object
+      required: [user, token]
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
+    CharacterSummary:
+      type: object
+      required: [id, external_id, name, status, species, type, gender, image, origin_location_id, current_location_id, created_at, updated_at]
+      properties:
+        id: {type: integer}
+        external_id: {type: integer}
+        name: {type: string}
+        status: {type: string}
+        species: {type: string}
+        type: {type: string, nullable: true}
+        gender: {type: string}
+        image: {type: string, format: uri, nullable: true}
+        origin_location_id: {type: integer, nullable: true}
+        current_location_id: {type: integer, nullable: true}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    Location:
+      type: object
+      required: [id, external_id, name, type, dimension]
+      properties:
+        id: {type: integer}
+        external_id: {type: integer}
+        name: {type: string}
+        type: {type: string}
+        dimension: {type: string}
+    Episode:
+      type: object
+      required: [id, external_id, name, air_date, episode_code]
+      properties:
+        id: {type: integer}
+        external_id: {type: integer}
+        name: {type: string}
+        air_date: {type: string}
+        episode_code: {type: string}
+    CharacterDetail:
+      allOf:
+        - $ref: '#/components/schemas/CharacterSummary'
+        - type: object
+          required: [origin, current_location, episodes]
+          properties:
+            origin:
+              oneOf:
+                - $ref: '#/components/schemas/Location'
+                - type: 'null'
+            current_location:
+              oneOf:
+                - $ref: '#/components/schemas/Location'
+                - type: 'null'
+            episodes:
+              type: array
+              items:
+                $ref: '#/components/schemas/Episode'
+    PaginationLinks:
+      type: object
+      properties:
+        first: {type: string, format: uri, nullable: true}
+        last: {type: string, format: uri, nullable: true}
+        prev: {type: string, format: uri, nullable: true}
+        next: {type: string, format: uri, nullable: true}
+    PaginationMeta:
+      type: object
+      required: [current_page, from, last_page, per_page, to, total]
+      properties:
+        current_page: {type: integer}
+        from: {type: integer, nullable: true}
+        last_page: {type: integer}
+        per_page: {type: integer}
+        to: {type: integer, nullable: true}
+        total: {type: integer}
+        path: {type: string, format: uri}
+        links:
+          type: array
+          items:
+            type: object
+            properties:
+              url: {type: string, format: uri, nullable: true}
+              label: {type: string}
+              active: {type: boolean}
+    PaginatedCharacters:
+      allOf:
+        - $ref: '#/components/schemas/PaginationMeta'
+        - type: object
+          required: [data]
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/CharacterSummary'
+    PaginatedFavorites:
+      allOf:
+        - $ref: '#/components/schemas/PaginationMeta'
+        - type: object
+          required: [data]
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/CharacterSummary'
+    MessageError:
+      type: object
+      required: [message]
+      properties:
+        message: {type: string}
+    ValidationError:
+      type: object
+      required: [message, errors]
+      properties:
+        message: {type: string}
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items: {type: string}
